@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f6f1e7" />
+    <title>Габлия Рамина — фотограф в Абхазии</title>
+    <meta
+      name="description"
+      content="Портфолио фотографа в Абхазии — портреты, пары, семьи и бренды в premium editorial эстетике."
+    />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+
+  <body>
+    <!-- Film grain -->
+    <div class="grain" aria-hidden="true"></div>
+
+    <!-- Welcome Overlay -->
+    <div
+      id="welcomeOverlay"
+      class="welcome"
+      aria-hidden="true"
+      role="dialog"
+      aria-label="Приветствие"
+    >
+      <div class="welcome__card" role="document">
+        <div class="welcome__orn welcome__orn--tl" aria-hidden="true"></div>
+        <div class="welcome__orn welcome__orn--tr" aria-hidden="true"></div>
+        <div class="welcome__orn welcome__orn--bl" aria-hidden="true"></div>
+        <div class="welcome__orn welcome__orn--br" aria-hidden="true"></div>
+
+        <p class="kicker">ПОРТФОЛИО</p>
+        <h2 id="welcomeTitle" class="welcome__title">Добрый день</h2>
+        <p id="welcomeSubtitle" class="welcome__subtitle">
+          Рада видеть вас. Загружаю портфолио…
+        </p>
+        <button
+          id="welcomeClose"
+          class="btn btn--primary btn--full"
+          type="button"
+        >
+          Открыть сайт →
+        </button>
+
+        <p class="welcome__hint">Нажмите, чтобы продолжить</p>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <header class="site-header">
+      <div class="container header__inner">
+        <a class="brand" href="#top" aria-label="На главную">
+          <span class="brand__mark" aria-hidden="true"></span>
+          <span id="brandName" class="brand__name">Габлия Рамина</span>
+        </a>
+
+        <button
+          id="navToggle"
+          class="nav-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="siteNav"
+        >
+          <span class="nav-toggle__line"></span>
+          <span class="nav-toggle__line"></span>
+          <span class="nav-toggle__line"></span>
+          <span class="sr-only">Меню</span>
+        </button>
+
+        <nav id="siteNav" class="nav" aria-label="Навигация">
+          <a href="#about">Обо мне</a>
+          <a href="#portfolio">Портфолио</a>
+          <a href="#pricing">Пакеты</a>
+          <a href="#certificates">Сертификаты</a>
+          <a href="#locations">Локации</a>
+          <a href="#contacts">Контакты</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="top">
+      <!-- Hero -->
+      <section class="section hero">
+        <div class="container hero__grid">
+          <div class="hero__text">
+            <p class="kicker">ФОТОГРАФ • АБХАЗИЯ</p>
+            <h1 id="heroTitle" class="h1">ГАБЛИЯ РАМИНА</h1>
+            <p class="lead">
+              Портреты, пары, семьи и бренды в спокойной editorial эстетике:
+              тёплый свет, чистая композиция и мягкая ретушь.
+            </p>
+
+            <div class="hero__cta">
+              <a class="btn btn--primary" href="#contacts"
+                >Записаться на съёмку</a
+              >
+              <a class="btn btn--ghost" href="#portfolio">Смотреть работы</a>
+            </div>
+
+            <div class="hero__meta">
+              <div class="meta-card">
+                <span class="meta-card__label">Фокус</span>
+                <span class="meta-card__value">Естественные эмоции</span>
+              </div>
+              <div class="meta-card">
+                <span class="meta-card__label">Срок</span>
+                <span class="meta-card__value">7–14 дней</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero__media">
+            <div class="frame">
+              <img
+                id="heroPhoto"
+                class="frame__img"
+                src="https://images.unsplash.com/photo-1520975748761-7d6d033b7f59?auto=format&fit=crop&w=1200&q=80"
+                alt="Портрет фотографа"
+                loading="eager"
+              />
+            </div>
+            <p class="hero__caption">
+              *Кадр в hero можно заменить в Sanity (siteSettings →
+              photographerPhoto)
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- About -->
+      <section id="about" class="section">
+        <div class="container">
+          <div class="section__head">
+            <p class="kicker">О СЪЁМКЕ</p>
+            <h2 class="h2">Обо мне</h2>
+          </div>
+
+          <div class="card card--soft">
+            <div class="card__orn card__orn--tl" aria-hidden="true"></div>
+            <div class="card__orn card__orn--br" aria-hidden="true"></div>
+
+            <p id="aboutText" class="text">
+              Я — фотограф из Абхазии. Снимаю портреты, пары, семьи и бренды в
+              спокойной editorial эстетике. Мне важны не “идеальные позы”, а
+              живые жесты и честные эмоции — чтобы фотографии выглядели дорого и
+              оставались актуальными через годы.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Portfolio -->
+      <section id="portfolio" class="section">
+        <div class="container">
+          <div class="section__head">
+            <p class="kicker">ВЫБРАННОЕ</p>
+            <h2 class="h2">Портфолио</h2>
+          </div>
+
+          <p id="portfolioError" class="error is-hidden" role="status"></p>
+
+          <div id="portfolioGrid" class="grid"></div>
+        </div>
+      </section>
+
+      <!-- Pricing -->
+      <section id="pricing" class="section">
+        <div class="container">
+          <div class="section__head">
+            <p class="kicker">ПРОЗРАЧНО</p>
+            <h2 class="h2">Пакеты и стоимость</h2>
+          </div>
+
+          <p id="pricingError" class="error is-hidden" role="status"></p>
+
+          <div id="pricingList" class="pricing"></div>
+
+          <p class="note">
+            Точная стоимость зависит от задачи, количества людей и локаций.
+            Напишите — и я предложу формат.
+          </p>
+        </div>
+      </section>
+
+      <!-- Certificates -->
+      <section id="certificates" class="section">
+        <div class="container">
+          <div class="section__head">
+            <p class="kicker">ОПЫТ</p>
+            <h2 class="h2">Сертификаты</h2>
+          </div>
+
+          <p id="certError" class="error is-hidden" role="status"></p>
+
+          <div id="certGrid" class="cert-grid"></div>
+        </div>
+      </section>
+
+      <!-- Locations -->
+      <section id="locations" class="section">
+        <div class="container">
+          <div class="section__head">
+            <p class="kicker">ГДЕ СНИМАЕМ</p>
+            <h2 class="h2">Локации</h2>
+          </div>
+
+          <div class="card card--soft">
+            <div class="card__orn card__orn--tl" aria-hidden="true"></div>
+            <div class="card__orn card__orn--br" aria-hidden="true"></div>
+
+            <p id="locationsText" class="text">
+              Снимаю по Абхазии: Сухум, Гагра, Пицунда, Новый Афон и
+              окрестности. Любимые сценарии — утренний берег, мягкий вечерний
+              свет в горах, спокойные городские улицы и уютные интерьеры.
+            </p>
+
+            <div class="chips" aria-label="Популярные места">
+              <span class="chip">Сухум</span>
+              <span class="chip">Гагра</span>
+              <span class="chip">Пицунда</span>
+              <span class="chip">Новый Афон</span>
+              <span class="chip">Горные маршруты</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Contacts -->
+      <section id="contacts" class="section section--last">
+        <div class="container">
+          <div class="section__head">
+            <p class="kicker">СВЯЗЬ</p>
+            <h2 class="h2">Контакты</h2>
+          </div>
+
+          <p id="contactsError" class="error is-hidden" role="status"></p>
+
+          <div id="contactsPanels" class="panels"></div>
+
+          <div class="divider"></div>
+
+          <p class="note">
+            Если вам важен конкретный стиль — пришлите 2–3 референса. Я помогу
+            подобрать локацию и образ.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span class="footer__left">
+          © <span id="footerYear"></span>
+          <span id="footerName">Габлия Рамина</span>
+        </span>
+        <a class="footer__link" href="#top">Наверх ↑</a>
+      </div>
+    </footer>
+
+    <!-- Portfolio Modal -->
+    <div
+      id="modal"
+      class="modal"
+      aria-hidden="true"
+      role="dialog"
+      aria-label="Просмотр работ"
+    >
+      <div class="modal__backdrop" data-close="true"></div>
+
+      <div class="modal__panel" role="document">
+        <button
+          id="modalClose"
+          class="icon-btn"
+          type="button"
+          aria-label="Закрыть"
+          data-close="true"
+        >
+          ✕
+        </button>
+
+        <div class="modal__head">
+          <h3 id="modalTitle" class="modal__title">Серия</h3>
+          <a
+            id="modalVideo"
+            class="btn btn--ghost is-hidden"
+            href="#"
+            target="_blank"
+            rel="noopener"
+          >
+            Смотреть видео →
+          </a>
+        </div>
+
+        <div class="modal__media">
+          <button
+            id="modalPrev"
+            class="nav-btn"
+            type="button"
+            aria-label="Предыдущее фото"
+          >
+            ←
+          </button>
+          <img id="modalImage" class="modal__img" src="" alt="" />
+          <button
+            id="modalNext"
+            class="nav-btn"
+            type="button"
+            aria-label="Следующее фото"
+          >
+            →
+          </button>
+        </div>
+
+        <div id="modalDots" class="dots" aria-label="Навигация по фото"></div>
+
+        <p class="modal__hint">Esc — закрыть · ←/→ — листать</p>
+      </div>
+    </div>
+
+    <script src="js/app.js"></script>
+  </body>
+</html>
