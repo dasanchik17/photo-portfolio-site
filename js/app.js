@@ -56,38 +56,64 @@ function easeInOutCubic(t) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
-function smoothScrollTo(targetY, baseDuration = 900) {
-  if (prefersReducedMotion()) {
-    window.scrollTo(0, targetY);
-    return;
-  }
-
-  const startY = window.pageYOffset;
-  const diff = targetY - startY;
-  const distance = Math.abs(diff);
-
-  const duration = Math.min(
-    1400,
-    Math.max(baseDuration, baseDuration + distance * 0.16)
-  );
-
-  const start = performance.now();
-
-  function step(now) {
-    const elapsed = now - start;
-    const t = Math.min(1, elapsed / duration);
-    const eased = easeInOutCubic(t);
-    window.scrollTo(0, startY + diff * eased);
-    if (t < 1) requestAnimationFrame(step);
-  }
-
-  requestAnimationFrame(step);
-}
-
 function vibro(ms = 10) {
   try {
     if (navigator.vibrate) navigator.vibrate(ms);
   } catch (_) {}
+}
+
+/* =========================
+   Smooth scroll (FIX: no lag)
+   - Uses native smooth scroll where possible (fast + no jank)
+   - Cancels previous scroll animation on new navigation
+========================= */
+let __scrollAnim = { raf: 0, active: false };
+
+function cancelSmoothScroll() {
+  if (__scrollAnim.raf) cancelAnimationFrame(__scrollAnim.raf);
+  __scrollAnim.raf = 0;
+  __scrollAnim.active = false;
+}
+
+function smoothScrollTo(targetY) {
+  if (prefersReducedMotion()) {
+    cancelSmoothScroll();
+    window.scrollTo(0, targetY);
+    return;
+  }
+
+  const supportsNative =
+    "scrollBehavior" in document.documentElement.style &&
+    typeof window.scrollTo === "function";
+
+  cancelSmoothScroll();
+
+  if (supportsNative) {
+    window.scrollTo({ top: targetY, behavior: "smooth" });
+    return;
+  }
+
+  // Fallback (rare)
+  const startY = window.pageYOffset;
+  const diff = targetY - startY;
+  const distance = Math.abs(diff);
+
+  const duration = Math.min(650, Math.max(280, 220 + distance * 0.18));
+  const start = performance.now();
+  __scrollAnim.active = true;
+
+  function step(now) {
+    const t = Math.min(1, (now - start) / duration);
+    const eased = easeInOutCubic(t);
+    window.scrollTo(0, startY + diff * eased);
+    if (t < 1) {
+      __scrollAnim.raf = requestAnimationFrame(step);
+    } else {
+      cancelSmoothScroll();
+    }
+  }
+
+  __scrollAnim.raf = requestAnimationFrame(step);
 }
 
 /* =========================
@@ -254,11 +280,10 @@ function resetTilt(el) {
 }
 
 function collectTiltTargets() {
-  const heroFrame = document.querySelector(".frame"); // hero контейнер
+  const heroFrame = document.querySelector(".frame");
   const cards = [
     ...document.querySelectorAll(".work, .package, .cert, .panel, .card"),
   ];
-
   const targets = [heroFrame, ...cards].filter(Boolean);
 
   targets.forEach((el) => {
@@ -290,7 +315,7 @@ function setupPointerTilt(targets) {
   if (!targets?.length) return;
   if (prefersReducedMotion()) return;
 
-  const strength = 8; // deg
+  const strength = 8;
   const ease = 0.14;
 
   targets.forEach((el) => {
@@ -330,7 +355,6 @@ function setupPointerTilt(targets) {
       resetTilt(el);
     };
 
-    // Pointer tilt — только когда hover есть (чтобы не мешать скроллу на мобиле)
     if (window.matchMedia("(hover: hover)").matches) {
       el.addEventListener("pointermove", onMove, { passive: true });
       el.addEventListener("pointerleave", onLeave, { passive: true });
@@ -417,7 +441,6 @@ function setupGyroTilt(heroEl, cardEls) {
     enabled = true;
     window.addEventListener("deviceorientation", onOrientation, true);
 
-    // если за 2.2 сек данных нет — отключим, чтобы не грузить
     setTimeout(() => {
       if (!hasData) {
         try {
@@ -429,7 +452,6 @@ function setupGyroTilt(heroEl, cardEls) {
     requestAnimationFrame(applyFrame);
   }
 
-  // iOS: разрешение — только после действия пользователя
   const btn = document.getElementById("welcomeClose");
   const once = async () => {
     document.removeEventListener("pointerdown", once, true);
@@ -995,7 +1017,6 @@ function openWelcomeOverlay(siteName) {
   };
 
   const onOverlayClick = () => close();
-
   const onCardClick = (e) => e.stopPropagation();
 
   document.addEventListener("keydown", onKey);
@@ -1009,12 +1030,16 @@ function openWelcomeOverlay(siteName) {
 }
 
 /* =========================
-   Nav: smooth scroll + spy
+   Nav: smooth scroll + spy (FIX)
 ========================= */
 function setupSmoothScrollAndNav() {
   const nav = $("#siteNav");
   const toggle = $("#navToggle");
   const header = $(".site-header");
+
+  // Отмена нашего скролла, если юзер сам начал скроллить (очень важно для плавности)
+  window.addEventListener("touchstart", cancelSmoothScroll, { passive: true });
+  window.addEventListener("wheel", cancelSmoothScroll, { passive: true });
 
   const navLinks = $$(
     "#siteNav a[href^='#'], a.btn[href^='#'], .footer__link[href^='#'], .dock a[href^='#']"
@@ -1053,7 +1078,7 @@ function setupSmoothScrollAndNav() {
       const y =
         target.getBoundingClientRect().top + window.pageYOffset - headerH - 10;
 
-      smoothScrollTo(y, 900);
+      smoothScrollTo(y);
       history.pushState(null, "", href);
     });
   });
