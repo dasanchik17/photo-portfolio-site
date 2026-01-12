@@ -22,6 +22,13 @@
   </head>
 
   <body>
+    <!-- Soft floating background blobs (visual only) -->
+    <div class="bg-orbs" aria-hidden="true">
+      <span class="orb orb--1"></span>
+      <span class="orb orb--2"></span>
+      <span class="orb orb--3"></span>
+    </div>
+
     <!-- Film grain -->
     <div class="grain" aria-hidden="true"></div>
 
@@ -58,6 +65,11 @@
 
     <!-- Header -->
     <header class="site-header">
+      <!-- Scroll progress -->
+      <div class="scrollbar" aria-hidden="true">
+        <span id="scrollbarFill" class="scrollbar__fill"></span>
+      </div>
+
       <div class="container header__inner">
         <a class="brand" href="#top" aria-label="На главную">
           <span class="brand__mark" aria-hidden="true"></span>
@@ -79,9 +91,9 @@
 
         <nav id="siteNav" class="nav" aria-label="Навигация">
           <a href="#about">Обо мне</a>
-          <a href="#portfolio">Портфолио</a>
+          <a href="#portfolio">Мои работы</a>
           <a href="#pricing">Пакеты</a>
-          <a href="#certificates">Сертификаты</a>
+          <a href="#certificates">Дипломы</a>
           <a href="#locations">Локации</a>
           <a href="#contacts">Контакты</a>
         </nav>
@@ -92,7 +104,7 @@
       <!-- Hero -->
       <section class="section hero">
         <div class="container hero__grid">
-          <div class="hero__text">
+          <div class="hero__text reveal">
             <p class="kicker">ФОТОГРАФ • АБХАЗИЯ</p>
             <h1 id="heroTitle" class="h1">ГАБЛИЯ РАМИНА</h1>
             <p class="lead">
@@ -101,33 +113,32 @@
             </p>
 
             <div class="hero__cta">
-              <a class="btn btn--primary" href="#contacts"
+              <a class="btn btn--primary btn--magnet" href="#contacts"
                 >Записаться на съёмку</a
               >
-              <a class="btn btn--ghost" href="#portfolio">Смотреть работы</a>
+              <a class="btn btn--ghost btn--magnet" href="#portfolio"
+                >Смотреть работы</a
+              >
             </div>
 
-            <div class="hero__meta">
-              <div class="meta-card">
-                <span class="meta-card__label">Фокус</span>
-                <span class="meta-card__value">Естественные эмоции</span>
-              </div>
-              <div class="meta-card">
-                <span class="meta-card__label">Срок</span>
-                <span class="meta-card__value">7–14 дней</span>
-              </div>
+            <div class="hero__chips">
+              <span class="mini">Premium editorial</span>
+              <span class="mini">Мягкий свет</span>
+              <span class="mini">Естественные эмоции</span>
             </div>
           </div>
 
-          <div class="hero__media">
-            <div class="frame">
+          <div class="hero__media reveal">
+            <div class="frame frame--hero">
               <img
                 id="heroPhoto"
                 class="frame__img"
-                src="https://images.unsplash.com/photo-1520975748761-7d6d033b7f59?auto=format&fit=crop&w=1200&q=80"
+                src=""
                 alt="Портрет фотографа"
                 loading="eager"
               />
+              <span class="frame__shine" aria-hidden="true"></span>
+              <span class="frame__vignette" aria-hidden="true"></span>
             </div>
             <p class="hero__caption">
               *Кадр в hero можно заменить в Sanity (siteSettings →
@@ -140,12 +151,12 @@
       <!-- About -->
       <section id="about" class="section">
         <div class="container">
-          <div class="section__head">
+          <div class="section__head reveal">
             <p class="kicker">О СЪЁМКЕ</p>
             <h2 class="h2">Обо мне</h2>
           </div>
 
-          <div class="card card--soft">
+          <div class="card card--soft reveal floaty">
             <div class="card__orn card__orn--tl" aria-hidden="true"></div>
             <div class="card__orn card__orn--br" aria-hidden="true"></div>
 
@@ -162,9 +173,9 @@
       <!-- Portfolio -->
       <section id="portfolio" class="section">
         <div class="container">
-          <div class="section__head">
+          <div class="section__head reveal">
             <p class="kicker">ВЫБРАННОЕ</p>
-            <h2 class="h2">Портфолио</h2>
+            <h2 class="h2">Мои работы</h2>
           </div>
 
           <p id="portfolioError" class="error is-hidden" role="status"></p>
@@ -176,8 +187,8 @@
       <!-- Pricing -->
       <section id="pricing" class="section">
         <div class="container">
-          <div class="section__head">
-            <p class="kicker">ПРОЗРАЧНО</p>
+          <div class="section__head reveal">
+            <p class="kicker">ЦЕНЫ</p>
             <h2 class="h2">Пакеты и стоимость</h2>
           </div>
 
@@ -185,17 +196,30 @@
 
           <div id="pricingList" class="pricing"></div>
 
-          <p class="note">
-            Точная стоимость зависит от задачи, количества людей и локаций.
-            Напишите — и я предложу формат.
-          </p>
+          <div class="reveal">
+            <h3 class="h3">Возможные дополнения к пакету</h3>
+            <p class="note">
+              Каждый последующий час работы. Заказ свадебной фотокниги. USB
+              флешки с фотографиями. 3 видео reels по 30–60 сек. Срочное
+              изготовление материала в течение недели.
+            </p>
+
+            <h3 class="h3" style="margin-top: 16px">Важная информация</h3>
+            <p class="note">
+              Фотограф самостоятельно выбирает и обрабатывает оговоренное
+              количество фотографий на своё усмотрение. Исходники не передаются.
+              Фотограф не осуществляет пластику внешнего вида клиента, не
+              производит журнальную ретушь лица. Время съёмки начинается по
+              записи, а не с первого кадра.
+            </p>
+          </div>
         </div>
       </section>
 
       <!-- Certificates -->
       <section id="certificates" class="section">
         <div class="container">
-          <div class="section__head">
+          <div class="section__head reveal">
             <p class="kicker">ОПЫТ</p>
             <h2 class="h2">Сертификаты</h2>
           </div>
@@ -209,12 +233,12 @@
       <!-- Locations -->
       <section id="locations" class="section">
         <div class="container">
-          <div class="section__head">
+          <div class="section__head reveal">
             <p class="kicker">ГДЕ СНИМАЕМ</p>
             <h2 class="h2">Локации</h2>
           </div>
 
-          <div class="card card--soft">
+          <div class="card card--soft reveal floaty">
             <div class="card__orn card__orn--tl" aria-hidden="true"></div>
             <div class="card__orn card__orn--br" aria-hidden="true"></div>
 
@@ -238,7 +262,7 @@
       <!-- Contacts -->
       <section id="contacts" class="section section--last">
         <div class="container">
-          <div class="section__head">
+          <div class="section__head reveal">
             <p class="kicker">СВЯЗЬ</p>
             <h2 class="h2">Контакты</h2>
           </div>
@@ -249,7 +273,7 @@
 
           <div class="divider"></div>
 
-          <p class="note">
+          <p class="note reveal">
             Если вам важен конкретный стиль — пришлите 2–3 референса. Я помогу
             подобрать локацию и образ.
           </p>
@@ -267,6 +291,28 @@
         <a class="footer__link" href="#top">Наверх ↑</a>
       </div>
     </footer>
+
+    <!-- Mobile bottom dock (WOW) -->
+    <nav class="dock" aria-label="Быстрые действия">
+      <a class="dock__item" href="#portfolio" data-dock="portfolio">
+        <span class="dock__icon" aria-hidden="true">▦</span>
+        <span class="dock__label">Работы</span>
+      </a>
+
+      <a
+        class="dock__item dock__item--primary"
+        href="#contacts"
+        data-dock="contacts"
+      >
+        <span class="dock__icon" aria-hidden="true">✦</span>
+        <span class="dock__label">Запись</span>
+      </a>
+
+      <a class="dock__item" href="#pricing" data-dock="pricing">
+        <span class="dock__icon" aria-hidden="true">₽</span>
+        <span class="dock__label">Цены</span>
+      </a>
+    </nav>
 
     <!-- Portfolio Modal -->
     <div
@@ -302,7 +348,7 @@
           </a>
         </div>
 
-        <div class="modal__media">
+        <div class="modal__media" id="modalMedia">
           <button
             id="modalPrev"
             class="nav-btn"
@@ -324,7 +370,9 @@
 
         <div id="modalDots" class="dots" aria-label="Навигация по фото"></div>
 
-        <p class="modal__hint">Esc — закрыть · ←/→ — листать</p>
+        <p class="modal__hint">
+          Esc — закрыть · ←/→ — листать · свайп — на мобилке
+        </p>
       </div>
     </div>
 

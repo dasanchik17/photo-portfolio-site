@@ -1,6 +1,3 @@
-/* =========================
-   Sanity config
-========================= */
 const SANITY_PROJECT_ID = "7t351ohn";
 const SANITY_DATASET = "production";
 const SANITY_API_VERSION = "2025-01-01";
@@ -31,6 +28,10 @@ function prefersReducedMotion() {
   );
 }
 
+function isMobile() {
+  return window.matchMedia && window.matchMedia("(max-width: 719px)").matches;
+}
+
 function getGreetingByTime(date = new Date()) {
   const h = date.getHours();
   if (h >= 5 && h < 12) return "Доброе утро";
@@ -47,17 +48,10 @@ function show(el) {
   if (el) el.classList.remove("is-hidden");
 }
 
-function hide(el) {
-  if (el) el.classList.add("is-hidden");
-}
-
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-/* =========================
-   Быстрее + плавнее scroll
-========================= */
 function easeInOutCubic(t) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
@@ -90,6 +84,12 @@ function smoothScrollTo(targetY, baseDuration = 900) {
   requestAnimationFrame(step);
 }
 
+function vibro(ms = 10) {
+  try {
+    if (navigator.vibrate) navigator.vibrate(ms);
+  } catch (_) {}
+}
+
 /* =========================
    Sanity fetch (GROQ)
 ========================= */
@@ -119,7 +119,7 @@ async function fetchGROQ(query) {
 }
 
 /* =========================
-   DEMO fallback (ФИО без отчества)
+   DEMO fallback
 ========================= */
 const DEMO = {
   siteSettings: {
@@ -170,6 +170,292 @@ const QUERIES = {
 };
 
 /* =========================
+   Mobile ripple (WOW tap)
+========================= */
+function addRipple(el) {
+  if (!el || prefersReducedMotion()) return;
+
+  el.addEventListener(
+    "pointerdown",
+    (e) => {
+      if (!isMobile()) return;
+      const rect = el.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const ripple = document.createElement("span");
+      ripple.style.position = "absolute";
+      ripple.style.left = `${x}px`;
+      ripple.style.top = `${y}px`;
+      ripple.style.width = "10px";
+      ripple.style.height = "10px";
+      ripple.style.borderRadius = "999px";
+      ripple.style.transform = "translate(-50%, -50%) scale(0)";
+      ripple.style.background =
+        "radial-gradient(circle, rgba(111,122,74,.22), transparent 62%)";
+      ripple.style.pointerEvents = "none";
+      ripple.style.opacity = "1";
+      ripple.style.filter = "blur(.2px)";
+      ripple.style.transition =
+        "transform 520ms cubic-bezier(.16,1,.3,1), opacity 520ms cubic-bezier(.16,1,.3,1)";
+
+      el.appendChild(ripple);
+
+      requestAnimationFrame(() => {
+        ripple.style.transform = "translate(-50%, -50%) scale(18)";
+        ripple.style.opacity = "0";
+      });
+
+      setTimeout(() => ripple.remove(), 560);
+    },
+    { passive: true }
+  );
+}
+
+function setupRipples() {
+  $$(".btn, .panel, .dock__item, .work, .package, .cert, .card").forEach(
+    addRipple
+  );
+}
+
+/* =========================
+   3D Tilt: Gyroscope (mobile) + Pointer fallback
+========================= */
+function clamp(n, min, max) {
+  return Math.min(max, Math.max(min, n));
+}
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function ensureGlow(el) {
+  if (!el) return;
+  if (el.querySelector(".tilt__glow")) return;
+  const glow = document.createElement("span");
+  glow.className = "tilt__glow";
+  el.appendChild(glow);
+}
+
+function setTilt(el, rx, ry, mx = 50, my = 35) {
+  if (!el) return;
+  el.classList.add("is-tilting");
+  el.style.setProperty("--mx", `${mx}%`);
+  el.style.setProperty("--my", `${my}%`);
+  el.style.transform = `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) translateZ(0)`;
+}
+
+function resetTilt(el) {
+  if (!el) return;
+  el.classList.remove("is-tilting");
+  el.style.transform = "";
+  el.style.removeProperty("--mx");
+  el.style.removeProperty("--my");
+}
+
+function collectTiltTargets() {
+  const heroFrame = document.querySelector(".frame"); // hero контейнер
+  const cards = [
+    ...document.querySelectorAll(".work, .package, .cert, .panel, .card"),
+  ];
+
+  const targets = [heroFrame, ...cards].filter(Boolean);
+
+  targets.forEach((el) => {
+    el.classList.add("tilt");
+    const cs = getComputedStyle(el);
+    if (cs.position === "static") el.style.position = "relative";
+    ensureGlow(el);
+  });
+
+  return { heroFrame, cards, targets };
+}
+
+async function requestGyroPermissionIfNeeded() {
+  try {
+    const DOE = window.DeviceOrientationEvent;
+    if (!DOE) return true;
+
+    if (typeof DOE.requestPermission === "function") {
+      const state = await DOE.requestPermission();
+      return state === "granted";
+    }
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+function setupPointerTilt(targets) {
+  if (!targets?.length) return;
+  if (prefersReducedMotion()) return;
+
+  const strength = 8; // deg
+  const ease = 0.14;
+
+  targets.forEach((el) => {
+    let raf = 0;
+    let curX = 0;
+    let curY = 0;
+    let tgtX = 0;
+    let tgtY = 0;
+    let mx = 50;
+    let my = 35;
+
+    const onMove = (e) => {
+      const rect = el.getBoundingClientRect();
+      const x = clamp((e.clientX - rect.left) / rect.width, 0, 1);
+      const y = clamp((e.clientY - rect.top) / rect.height, 0, 1);
+
+      tgtX = (0.5 - y) * strength;
+      tgtY = (x - 0.5) * strength;
+
+      mx = x * 100;
+      my = y * 100;
+
+      if (!raf) raf = requestAnimationFrame(tick);
+    };
+
+    const tick = () => {
+      curX = lerp(curX, tgtX, ease);
+      curY = lerp(curY, tgtY, ease);
+      setTilt(el, curX, curY, mx, my);
+      raf = 0;
+    };
+
+    const onLeave = () => {
+      cancelAnimationFrame(raf);
+      raf = 0;
+      curX = curY = tgtX = tgtY = 0;
+      resetTilt(el);
+    };
+
+    // Pointer tilt — только когда hover есть (чтобы не мешать скроллу на мобиле)
+    if (window.matchMedia("(hover: hover)").matches) {
+      el.addEventListener("pointermove", onMove, { passive: true });
+      el.addEventListener("pointerleave", onLeave, { passive: true });
+      el.addEventListener("pointercancel", onLeave, { passive: true });
+    }
+  });
+}
+
+function setupGyroTilt(heroEl, cardEls) {
+  if (prefersReducedMotion()) return;
+  if (!isMobile()) return;
+
+  const heroMax = 8;
+  const cardMax = 6;
+  const smooth = 0.12;
+
+  let enabled = false;
+  let hasData = false;
+
+  let hX = 0,
+    hY = 0,
+    hTX = 0,
+    hTY = 0;
+  let cX = 0,
+    cY = 0,
+    cTX = 0,
+    cTY = 0;
+
+  let visibleCards = new Set();
+
+  const io = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((e) => {
+        if (!(e.target instanceof HTMLElement)) return;
+        if (e.isIntersecting) visibleCards.add(e.target);
+        else visibleCards.delete(e.target);
+      });
+    },
+    { threshold: 0.12, rootMargin: "120px 0px 120px 0px" }
+  );
+
+  (cardEls || []).forEach((el) => io.observe(el));
+
+  function applyFrame() {
+    if (!enabled) return;
+
+    if (heroEl) {
+      hX = lerp(hX, hTX, smooth);
+      hY = lerp(hY, hTY, smooth);
+      setTilt(heroEl, hX, hY, 50 + hY * 3, 35 - hX * 3);
+    }
+
+    cX = lerp(cX, cTX, smooth);
+    cY = lerp(cY, cTY, smooth);
+    const mx = 50 + cY * 3;
+    const my = 35 - cX * 3;
+
+    visibleCards.forEach((el) => {
+      setTilt(el, cX, cY, mx, my);
+    });
+
+    requestAnimationFrame(applyFrame);
+  }
+
+  function onOrientation(e) {
+    if (e.beta == null || e.gamma == null) return;
+    hasData = true;
+
+    const beta = clamp(e.beta, -35, 35);
+    const gamma = clamp(e.gamma, -35, 35);
+
+    hTX = clamp((-beta / 35) * heroMax, -heroMax, heroMax);
+    hTY = clamp((gamma / 35) * heroMax, -heroMax, heroMax);
+
+    cTX = clamp((-beta / 35) * cardMax, -cardMax, cardMax);
+    cTY = clamp((gamma / 35) * cardMax, -cardMax, cardMax);
+  }
+
+  async function enable() {
+    if (enabled) return;
+    const ok = await requestGyroPermissionIfNeeded();
+    if (!ok) return;
+
+    enabled = true;
+    window.addEventListener("deviceorientation", onOrientation, true);
+
+    // если за 2.2 сек данных нет — отключим, чтобы не грузить
+    setTimeout(() => {
+      if (!hasData) {
+        try {
+          window.removeEventListener("deviceorientation", onOrientation, true);
+        } catch (_) {}
+      }
+    }, 2200);
+
+    requestAnimationFrame(applyFrame);
+  }
+
+  // iOS: разрешение — только после действия пользователя
+  const btn = document.getElementById("welcomeClose");
+  const once = async () => {
+    document.removeEventListener("pointerdown", once, true);
+    btn?.removeEventListener("click", once, true);
+    await enable();
+  };
+
+  btn?.addEventListener("click", once, {
+    capture: true,
+    passive: true,
+    once: true,
+  });
+  document.addEventListener("pointerdown", once, {
+    capture: true,
+    passive: true,
+    once: true,
+  });
+}
+
+function init3DTilt() {
+  const { heroFrame, cards, targets } = collectTiltTargets();
+  setupPointerTilt(targets);
+  setupGyroTilt(heroFrame, cards);
+}
+
+/* =========================
    Skeletons
 ========================= */
 function renderPortfolioSkeleton(count = 6) {
@@ -178,7 +464,7 @@ function renderPortfolioSkeleton(count = 6) {
   grid.innerHTML = Array.from({ length: count })
     .map(
       () => `
-    <div class="skeleton">
+    <div class="skeleton reveal mobile-wiggle">
       <div class="skel-media"></div>
       <div class="skel-line"></div>
       <div class="skel-line short"></div>
@@ -193,7 +479,7 @@ function renderPricingSkeleton(count = 3) {
   wrap.innerHTML = Array.from({ length: count })
     .map(
       () => `
-    <div class="skeleton" style="padding: 1rem;">
+    <div class="skeleton reveal mobile-wiggle" style="padding: 1rem;">
       <div class="skel-line" style="margin: .4rem 0 .7rem;"></div>
       <div class="skel-line short" style="margin: 0 0 .9rem;"></div>
       <div class="skel-line"></div>
@@ -210,7 +496,7 @@ function renderCertSkeleton(count = 3) {
   wrap.innerHTML = Array.from({ length: count })
     .map(
       () => `
-    <div class="skeleton">
+    <div class="skeleton reveal mobile-wiggle">
       <div class="skel-media" style="aspect-ratio: 16/10;"></div>
       <div class="skel-line"></div>
       <div class="skel-line short"></div>
@@ -225,7 +511,7 @@ function renderContactsSkeleton() {
   wrap.innerHTML = Array.from({ length: 4 })
     .map(
       () => `
-    <div class="skeleton" style="padding: 1rem;">
+    <div class="skeleton reveal mobile-wiggle" style="padding: 1rem;">
       <div class="skel-line short" style="margin: .2rem 0 .7rem;"></div>
       <div class="skel-line tiny" style="margin: 0;"></div>
     </div>
@@ -309,7 +595,9 @@ function renderContactsPanels(contacts) {
         ? 'target="_blank" rel="noopener"'
         : "";
       return `
-      <a class="panel" href="${escapeHTML(it.href)}" ${extra}>
+      <a class="panel reveal mobile-wiggle" href="${escapeHTML(
+        it.href
+      )}" ${extra}>
         <span class="panel__left">
           <span class="panel__title">${escapeHTML(it.title)}</span>
           <span class="panel__value">${escapeHTML(it.value)}</span>
@@ -334,7 +622,7 @@ function renderPortfolio(items) {
       const hasVideo = !!item.videoUrl;
 
       return `
-      <article class="work" tabindex="0"
+      <article class="work reveal mobile-wiggle" tabindex="0"
         data-idx="${idx}"
         aria-label="Открыть серию: ${escapeHTML(title)}"
         role="button">
@@ -361,7 +649,7 @@ function renderPricing(packages) {
   wrap.innerHTML = safe
     .map(
       (pkg) => `
-    <div class="package">
+    <div class="package reveal mobile-wiggle">
       <div class="package__head">
         <h4 class="package__title">${escapeHTML(pkg.title || "Пакет")}</h4>
         <div class="package__price">${escapeHTML(pkg.price || "")}</div>
@@ -383,7 +671,7 @@ function renderCertificates(certs) {
   wrap.innerHTML = safe
     .map(
       (c) => `
-    <article class="cert">
+    <article class="cert reveal mobile-wiggle">
       <img class="cert__img" src="${escapeHTML(
         c.imageUrl || ""
       )}" alt="${escapeHTML(c.title || "Сертификат")}" loading="lazy" />
@@ -512,6 +800,50 @@ function prevSlide() {
   renderModalSlide();
 }
 
+function setupModalSwipe() {
+  const area = $(".modal__media");
+  if (!area) return;
+
+  let startX = 0;
+  let startY = 0;
+  let active = false;
+  const threshold = 34;
+
+  area.addEventListener(
+    "pointerdown",
+    (e) => {
+      if (!$("#modal")?.classList.contains("is-open")) return;
+      active = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      try {
+        area.setPointerCapture?.(e.pointerId);
+      } catch (_) {}
+    },
+    { passive: true }
+  );
+
+  area.addEventListener(
+    "pointerup",
+    (e) => {
+      if (!active) return;
+      active = false;
+
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+
+      if (Math.abs(dy) > Math.abs(dx)) return;
+      if (dx > threshold) prevSlide();
+      else if (dx < -threshold) nextSlide();
+    },
+    { passive: true }
+  );
+
+  area.addEventListener("pointercancel", () => (active = false), {
+    passive: true,
+  });
+}
+
 function setupModalEvents() {
   $("#modalClose")?.addEventListener("click", closeModal);
   $("#modalPrev")?.addEventListener("click", prevSlide);
@@ -550,6 +882,7 @@ function setupModalEvents() {
     if (!el) return;
     const idx = Number(el.getAttribute("data-idx"));
     if (!Number.isFinite(idx)) return;
+    vibro(8);
     openModal(idx);
   });
 
@@ -565,14 +898,12 @@ function setupModalEvents() {
       openModal(idx);
     }
   });
+
+  setupModalSwipe();
 }
 
 /* =========================
-   Fix: Welcome overlay НЕ зависает
-   - Убрали capture stopPropagation на overlay
-   - Кнопка всегда закрывает мгновенно
-   - Клик по фону (вне карточки) тоже закрывает
-   - Лочим скролл пока открыт overlay
+   Welcome overlay
 ========================= */
 let welcomeScrollY = 0;
 
@@ -611,47 +942,70 @@ function openWelcomeOverlay(siteName) {
     /\s+Львовна\s*$/i,
     ""
   );
-  setText(subtitle, `Рада видеть вас. Здесь портфолио: ${cleanName}.`);
+  setText(
+    subtitle,
+    `Рада видеть вас в своём творческом пространстве. ${cleanName}.`
+  );
 
-  // Лочим скролл — чтобы ничего не уезжало
   lockScroll();
 
   overlay.classList.add("is-visible");
   overlay.setAttribute("aria-hidden", "false");
 
-  // Закрытие: одно место
+  const prevFocus = document.activeElement;
+
+  const cleanup = () => {
+    document.removeEventListener("keydown", onKey);
+    overlay.removeEventListener("click", onOverlayClick);
+    card?.removeEventListener("click", onCardClick);
+    btn?.removeEventListener("click", onBtnClick);
+  };
+
   const close = () => {
     if (!overlay.classList.contains("is-visible")) return;
+
+    const active = document.activeElement;
+    if (active && overlay.contains(active) && typeof active.blur === "function")
+      active.blur();
+
     overlay.classList.remove("is-visible");
     overlay.setAttribute("aria-hidden", "true");
-    document.removeEventListener("keydown", onKey);
+
     unlockScroll();
 
-    // маленькая страховка: иногда iOS после fixed-body может дернуться
+    const brand = document.querySelector(".brand");
+    if (brand && typeof brand.focus === "function") {
+      brand.focus({ preventScroll: true });
+    } else if (prevFocus && typeof prevFocus.focus === "function") {
+      prevFocus.focus({ preventScroll: true });
+    }
+
+    cleanup();
     requestAnimationFrame(() => window.scrollTo(0, welcomeScrollY));
   };
 
   const onKey = (e) => {
     if (e.key === "Escape") close();
   };
+
+  const onBtnClick = (e) => {
+    e.preventDefault();
+    vibro(10);
+    close();
+  };
+
+  const onOverlayClick = () => close();
+
+  const onCardClick = (e) => e.stopPropagation();
+
   document.addEventListener("keydown", onKey);
+  btn?.addEventListener("click", onBtnClick, { passive: false });
+  overlay.addEventListener("click", onOverlayClick);
+  card?.addEventListener("click", onCardClick);
 
-  // Кнопка закрывает ВСЕГДА мгновенно
-  btn?.addEventListener(
-    "click",
-    (e) => {
-      e.preventDefault();
-      close();
-    },
-    { passive: false }
-  );
-
-  // Клик по фону закрывает, клик по карточке — нет
-  overlay.addEventListener("click", close);
-  card?.addEventListener("click", (e) => e.stopPropagation());
-
-  // НЕ делаем автозакрытие — на мобильном это часто выглядит как “зависание/глюк”
-  // Если хочешь авто — скажи, добавлю мягко и корректно.
+  requestAnimationFrame(() => {
+    btn?.focus?.({ preventScroll: true });
+  });
 }
 
 /* =========================
@@ -663,7 +1017,7 @@ function setupSmoothScrollAndNav() {
   const header = $(".site-header");
 
   const navLinks = $$(
-    "#siteNav a[href^='#'], a.btn[href^='#'], .footer__link[href^='#']"
+    "#siteNav a[href^='#'], a.btn[href^='#'], .footer__link[href^='#'], .dock a[href^='#']"
   );
   const menuLinks = $$("#siteNav a[href^='#']");
   const spyLinks = $$("#siteNav a[href^='#']");
@@ -671,7 +1025,13 @@ function setupSmoothScrollAndNav() {
     .map((a) => document.getElementById(a.getAttribute("href").slice(1)))
     .filter(Boolean);
 
+  const closeMenu = () => {
+    nav?.classList.remove("is-open");
+    toggle?.setAttribute("aria-expanded", "false");
+  };
+
   toggle?.addEventListener("click", () => {
+    vibro(6);
     const open = nav?.classList.toggle("is-open");
     toggle.setAttribute("aria-expanded", open ? "true" : "false");
   });
@@ -685,11 +1045,9 @@ function setupSmoothScrollAndNav() {
       if (!target) return;
 
       e.preventDefault();
+      vibro(8);
 
-      if (menuLinks.includes(link)) {
-        nav?.classList.remove("is-open");
-        toggle?.setAttribute("aria-expanded", "false");
-      }
+      if (menuLinks.includes(link)) closeMenu();
 
       const headerH = header?.offsetHeight ?? 0;
       const y =
@@ -708,10 +1066,11 @@ function setupSmoothScrollAndNav() {
 
     const clickedInsideNav = t.closest("#siteNav");
     const clickedToggle = t.closest("#navToggle");
-    if (!clickedInsideNav && !clickedToggle) {
-      nav?.classList.remove("is-open");
-      toggle?.setAttribute("aria-expanded", "false");
-    }
+    if (!clickedInsideNav && !clickedToggle) closeMenu();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeMenu();
   });
 
   const setActiveLink = (id) => {
@@ -747,6 +1106,147 @@ function setupSmoothScrollAndNav() {
 }
 
 /* =========================
+   Reveal on scroll
+========================= */
+function setupReveal() {
+  const els = $$(".reveal");
+  if (!els.length) return;
+
+  if (prefersReducedMotion()) {
+    els.forEach((el) => el.classList.add("is-in"));
+    return;
+  }
+
+  const io = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          e.target.classList.add("is-in");
+          io.unobserve(e.target);
+        }
+      });
+    },
+    { threshold: 0.12, rootMargin: "40px 0px -10% 0px" }
+  );
+
+  els.forEach((el) => io.observe(el));
+}
+
+/* Header state */
+function setupHeaderScrollState() {
+  const header = $(".site-header");
+  if (!header) return;
+
+  const on = () => header.classList.toggle("is-scrolled", window.scrollY > 6);
+  window.addEventListener("scroll", on, { passive: true });
+  on();
+}
+
+/* Hero parallax */
+function setupHeroParallax() {
+  if (prefersReducedMotion()) return;
+  const img = $("#heroPhoto");
+  const orbs = $$(".orb");
+
+  let ticking = false;
+  const onScroll = () => {
+    if (ticking) return;
+    ticking = true;
+
+    requestAnimationFrame(() => {
+      const y = window.scrollY || 0;
+
+      if (img) {
+        const t = Math.min(1, y / 700);
+        img.style.transform = `translateY(${t * 12}px) scale(${1 + t * 0.012})`;
+      }
+
+      orbs.forEach((o, i) => {
+        const k = (i + 1) * 0.007;
+        o.style.transform = `translateY(${y * k}px)`;
+      });
+
+      ticking = false;
+    });
+  };
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+}
+
+/* Scroll progress bar */
+function setupScrollProgress() {
+  const fill = $("#scrollbarFill");
+  if (!fill) return;
+
+  let ticking = false;
+  const on = () => {
+    if (ticking) return;
+    ticking = true;
+
+    requestAnimationFrame(() => {
+      const doc = document.documentElement;
+      const max = Math.max(1, doc.scrollHeight - doc.clientHeight);
+      const p = Math.min(1, Math.max(0, window.scrollY / max));
+      fill.style.width = `${p * 100}%`;
+      ticking = false;
+    });
+  };
+
+  window.addEventListener("scroll", on, { passive: true });
+  on();
+}
+
+/* Mobile dock active state */
+function setupDock() {
+  const dock = $(".dock");
+  if (!dock) return;
+
+  requestAnimationFrame(() => dock.classList.add("is-in"));
+
+  const items = $$(".dock__item", dock);
+  const map = {
+    portfolio: $("#portfolio"),
+    pricing: $("#pricing"),
+    contacts: $("#contacts"),
+  };
+
+  const secs = Object.entries(map)
+    .map(([k, el]) => ({ k, el }))
+    .filter((x) => x.el);
+
+  if (prefersReducedMotion()) return;
+
+  let ticking = false;
+  const on = () => {
+    if (ticking) return;
+    ticking = true;
+
+    requestAnimationFrame(() => {
+      const y = window.scrollY + 180;
+      let current = "portfolio";
+
+      for (const s of secs) {
+        if (s.el.offsetTop <= y) current = s.k;
+      }
+
+      items.forEach((a) =>
+        a.classList.toggle("is-active", a.dataset.dock === current)
+      );
+
+      ticking = false;
+    });
+  };
+
+  window.addEventListener("scroll", on, { passive: true });
+  on();
+
+  items.forEach((a) => {
+    a.addEventListener("click", () => vibro(10), { passive: true });
+  });
+}
+
+/* =========================
    Load data
 ========================= */
 async function loadAll() {
@@ -755,7 +1255,8 @@ async function loadAll() {
   renderCertSkeleton(3);
   renderContactsSkeleton();
 
-  // важно: чтобы браузер не “вспоминал” прошлую прокрутку
+  setupReveal();
+
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
   window.scrollTo(0, 0);
 
@@ -779,29 +1280,32 @@ async function loadAll() {
 
       renderPricing(prices || []);
       renderCertificates(certificates || []);
+
+      setupReveal();
+      setupRipples();
+      init3DTilt();
       return;
     } catch (err) {
       console.warn("SANITY ERROR:", err);
       const msg =
         "Не удалось загрузить данные из Sanity. Показываю демо-контент. Проверь projectId/CORS и наличие документов.";
-      [
-        "portfolioError",
-        "contactsError",
-        "pricingError",
-        "certError",
-        "contactsError",
-      ].forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) {
-          el.textContent = msg;
-          show(el);
+      ["portfolioError", "contactsError", "pricingError", "certError"].forEach(
+        (id) => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.textContent = msg;
+            show(el);
+          }
         }
-      });
+      );
     }
   }
 
   await sleep(200);
   renderSiteSettings(DEMO.siteSettings);
+  setupReveal();
+  setupRipples();
+  init3DTilt();
 }
 
 /* =========================
@@ -810,6 +1314,14 @@ async function loadAll() {
 document.addEventListener("DOMContentLoaded", () => {
   setupSmoothScrollAndNav();
   setupModalEvents();
+
+  setupHeaderScrollState();
+  setupHeroParallax();
+  setupReveal();
+  setupScrollProgress();
+  setupDock();
+  setupRipples();
+  init3DTilt();
 
   loadAll().catch((e) => {
     console.error(e);
